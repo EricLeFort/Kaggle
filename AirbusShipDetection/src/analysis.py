@@ -19,57 +19,60 @@ BATCH_SIZE = 32
 LEARNING_RATE = 0.001
 
 def bounding_box_to_coordinate_runs(x, y, width, height):
-	runs = []
-	row_start = (y-1) * IMAGE_SIZE
-	for i in range(0, height):
-		runs.append((row_start + x, width))
-		row_start += IMAGE_SIZE
+    runs = []
+    row_start = (y-1) * IMAGE_SIZE
+    for i in range(0, height):
+        runs.append((row_start + x, width))
+        row_start += IMAGE_SIZE
 
-	return runs
+    return runs
 
-model = CNN(IMAGE_SIZE)
-
-optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
-loss_func = nn.CrossEntropyLoss()
+model = CNN()
 
 # Define the mask for the train/validate split
 data = pd.read_csv("../data/train_ship_segmentations_v2.csv")
 mask = np.random.rand(len(data)) < 0.9
+total_count = len(data)
+train_count = (mask == True).sum()
+val_count = total_count - train_count
 data = None
 
 # Prepare the dataset and the dataloader
-
 train_data = ShipDataset(
-	ship_locations_file="../data/train_ship_segmentations_v2.csv",
-	img_dir="../data/train/",
-	mask=mask,
-	is_train=True,
-	image_size=IMAGE_SIZE)
+    ship_locations_file="../data/train_ship_segmentations_v2.csv",
+    img_dir="../data/train/",
+    mask=mask,
+    is_train=True,
+    image_size=IMAGE_SIZE)
 val_data = ShipDataset(
-	ship_locations_file="../data/train_ship_segmentations_v2.csv",
-	img_dir="../data/train/",
-	mask=mask,
-	is_train=False,
-	image_size=IMAGE_SIZE)
+    ship_locations_file="../data/train_ship_segmentations_v2.csv",
+    img_dir="../data/train/",
+    mask=mask,
+    is_train=False,
+    image_size=IMAGE_SIZE)
+
 train_loader = Data.DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=True)
+val_loader = Data.DataLoader(dataset=train_data, batch_size=BATCH_SIZE*4, shuffle=True)
 
 # training and testing
+optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+loss_func = nn.BCELoss()
+print("Beginning training phase..")
 for epoch in range(EPOCH):
     for i, batch in enumerate(train_loader):
         output = model(batch['image'])
-        print(output.shape)
-        print(batch['pixel_classes'].shape)
-        loss = loss_func(output, batch['pixel_classes'])	# compute loss
-        optimizer.zero_grad()           					# clear gradients for this training step
-        loss.backward()                 					# backpropagation, compute gradients
-        optimizer.step()                					# apply gradients
+        loss = loss_func(output, batch['pixel_classes'])    # compute loss
+        optimizer.zero_grad()                               # clear gradients for this training step
+        loss.backward()                                     # backpropagation, compute gradients
+        optimizer.step()                                    # apply gradients
 
-        if i % 50 == 0:
-            test_output = model(val_data['image'])
-            pred_y = torch.max(test_output, 1)[1].data.squeeze().numpy()
-            accuracy = float((pred_y == val_data['pixel_classes'].data.numpy()).astype(int).sum()) / float(val_data['pixel_classes'].size(0))
-            print('Epoch: ', epoch, '| train loss: %.4f' % loss.data.numpy(), '| test accuracy: %.2f' % accuracy)
-        
+        if (i+1) % 1 == 0:                                  # Display progress every 5 batches
+            val_batch = next(iter(val_loader))
+            val_output = model(val_batch['image'])
+            val_loss = loss_func(val_output, val_batch['pixel_classes'])
+            print("Epoch: %.4f | train loss: %.4f | validation loss %.4f"
+                % (float(BATCH_SIZE*(i+1) / train_count), loss.data.numpy(), val_loss.data.numpy()))
+
 
 
 
