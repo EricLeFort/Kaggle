@@ -66,7 +66,7 @@ for epoch in range(EPOCH):
         loss.backward()                                     # backpropagation, compute gradients
         optimizer.step()                                    # apply gradients
 
-        if (i+1) % 1 == 0:                                  # Display progress every 5 batches
+        if (i+1) % 5 == 0:                                  # Display progress every 5 batches
             val_batch = next(iter(val_loader))
             val_output = model(val_batch['image'])
             val_loss = loss_func(val_output, val_batch['pixel_classes'])
