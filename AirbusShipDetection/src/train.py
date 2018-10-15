@@ -1,6 +1,7 @@
 #!/Library/Frameworks/Python.framework/Versions/3.6/bin/python3
 import pandas as pd
 import numpy as np
+import pickle
 import glob
 import torch
 import torch.nn as nn
@@ -14,9 +15,9 @@ import utils
 
 # Images are 768x768
 IMAGE_SIZE = 768
-EPOCH = 1
+EPOCH = 3
 BATCH_SIZE = 32
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.1
 
 def bounding_box_to_coordinate_runs(x, y, width, height):
     runs = []
@@ -31,10 +32,12 @@ model = CNN()
 
 # Define the mask for the train/validate split
 data = pd.read_csv("../data/train_ship_segmentations_v2.csv")
-mask = np.random.rand(len(data)) < 0.9
+mask = np.random.rand(len(data)) < 0.05
+mask2 = np.random.rand(len(data)) < 0.99
 total_count = len(data)
 train_count = (mask == True).sum()
 val_count = total_count - train_count
+val_count = (mask2 == False).sum()
 data = None
 
 # Prepare the dataset and the dataloader
@@ -47,12 +50,13 @@ train_data = ShipDataset(
 val_data = ShipDataset(
     ship_locations_file="../data/train_ship_segmentations_v2.csv",
     img_dir="../data/train/",
-    mask=mask,
+    mask=mask2,
     is_train=False,
     image_size=IMAGE_SIZE)
 
 train_loader = Data.DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=True)
-val_loader = Data.DataLoader(dataset=train_data, batch_size=BATCH_SIZE*4, shuffle=True)
+val_loader = Data.DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=True)
+val_iterator = iter(val_loader)
 
 # training and testing
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
@@ -67,13 +71,15 @@ for epoch in range(EPOCH):
         optimizer.step()                                    # apply gradients
 
         if (i+1) % 5 == 0:                                  # Display progress every 5 batches
-            val_batch = next(iter(val_loader))
+            val_batch = next(val_iterator)
             val_output = model(val_batch['image'])
             val_loss = loss_func(val_output, val_batch['pixel_classes'])
             print("Epoch: %.4f | train loss: %.4f | validation loss %.4f"
-                % (float(BATCH_SIZE*(i+1) / train_count), loss.data.numpy(), val_loss.data.numpy()))
+                % (epoch + float(BATCH_SIZE*(i+1) / train_count), loss.data.numpy(), val_loss.data.numpy()))
 
-
+print("Training complete! Saving trained model.. ", end="", flush=True)
+pickle.dump(model, open('../models/model.pkl', 'wb'))
+print("Done.")
 
 
 """ For if I want to investigate a specific image (by index)
