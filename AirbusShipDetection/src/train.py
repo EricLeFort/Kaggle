@@ -2,11 +2,9 @@
 import pandas as pd
 import numpy as np
 import pickle
-import glob
 import torch
 import torch.nn as nn
 import torch.utils.data as Data
-import torchvision
 
 # Local imports
 from DefaultModel import CNN
@@ -17,16 +15,7 @@ import utils
 IMAGE_SIZE = 768
 EPOCH = 3
 BATCH_SIZE = 32
-LEARNING_RATE = 0.1
-
-def bounding_box_to_coordinate_runs(x, y, width, height):
-    runs = []
-    row_start = (y-1) * IMAGE_SIZE
-    for i in range(0, height):
-        runs.append((row_start + x, width))
-        row_start += IMAGE_SIZE
-
-    return runs
+LEARNING_RATE = 0.001
 
 model = CNN()
 
@@ -61,6 +50,9 @@ val_iterator = iter(val_loader)
 # training and testing
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 loss_func = nn.BCELoss()
+
+#TODO fix the loss function. Need to use Intersect over Union loss instead
+
 print("Beginning training phase..")
 for epoch in range(EPOCH):
     for i, batch in enumerate(train_loader):
@@ -84,7 +76,7 @@ print("Done.")
 
 """ For if I want to investigate a specific image (by index)
 import matplotlib.pyplot as plt
-import numpy as np
+import torchvision
 to_pil = torchvision.transforms.ToPILImage()
 img = to_pil(train_data[3]["image"])
 plt.imshow(lum_img)

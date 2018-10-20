@@ -27,7 +27,7 @@ class CNN(nn.Module):
         self.conv2 = nn.Sequential(
             nn.Conv2d(
                 in_channels=15,
-                out_channels=15,
+                out_channels=30,
                 kernel_size=2,
                 stride=2,
                 padding=0
@@ -36,17 +36,17 @@ class CNN(nn.Module):
             nn.MaxPool2d(
                 kernel_size=2,
                 stride=2
-            )                                   # output shape (15, 32, 32)
+            )                                   # output shape (30, 32, 32)
         )
 
         self.conv3 = nn.Sequential(
             nn.Conv2d(
-                in_channels=15,
-                out_channels=5,                 # Shrink from 15 channels down to 5
+                in_channels=30,
+                out_channels=60,                 # Shrink from 15 channels down to 5
                 kernel_size=2,
                 stride=2,
                 padding=0
-            ),                                  # output shape (5, 16, 16)
+            ),                                  # output shape (60, 16, 16)
             nn.ReLU(),
             nn.MaxPool2d(
                 kernel_size=2,
@@ -55,8 +55,9 @@ class CNN(nn.Module):
         )
 
         self.out = nn.Sequential(
+            nn.Dropout(p=0.5),
             nn.Linear(
-                int(5 * 8 * 8),
+                int(60 * 8 * 8),
                 589824
             ),
             nn.Softmax(1)                       # output shape (1, 589824)
