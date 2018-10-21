@@ -18,6 +18,16 @@ def bounding_box_to_coordinate_runs(x, y, width, height, image_size):
 
     return runs
 
+def iou(outputs: torch.Tensor, labels: torch.Tensor):
+    inter = (outputs * labels).sum(2).sum(1)
+    union = (outputs + labels).sum(2).sum(1)
+    losses = 1 - 2*((inter + 1e-99) / (union + 1e-99))
+
+    # Extra penalty if there was a ship but no predictions were made
+    
+    
+    return (losses).sum()
+
 def iou_score_from_runs(pred_coord_runs, target_coord_runs):
     # There was no ship expected and no ship found, return a perfect score
     if not pred_coord_runs and not target_coord_runs:

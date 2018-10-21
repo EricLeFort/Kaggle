@@ -10,8 +10,12 @@ from skimage import io
 root_path = "../data/test/"
 files = os.listdir(root_path)
 
+GPU_AVAILABLE = torch.cuda.is_available() and torch.cuda.device_count() > 0
+
 # Load the model
-model = pickle.load(open("../models/model1.pkl", 'rb'))
+model = pickle.load(open("../models/model.pkl", 'rb'))
+if GPU_AVAILABLE:
+    model = model.cuda()
 
 all_runs = []
 for file in files:
@@ -24,6 +28,9 @@ for file in files:
     image = image.transpose((2, 0, 1))
     image = torch.from_numpy(image)
     image = image.type(torch.FloatTensor)
+
+    if GPU_AVAILABLE:
+        image = image.cuda()
 
     # Make the prediction and flatten it
     pred = model(image.unsqueeze(0))
@@ -55,8 +62,3 @@ for file in files:
 
 all_runs = pd.DataFrame(all_runs, columns=["ImageId", "EncodedPixels"])
 all_runs.to_csv("../predictions/prediction1.csv", index=False)
-
-
-# TODO iterate through each of these files
-#   Append this prediction to the predictions
-#   predictions.to_csv("../predictions/model1.csv")

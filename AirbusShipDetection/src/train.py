@@ -5,24 +5,29 @@ import pickle
 import torch
 import torch.nn as nn
 import torch.utils.data as Data
+from sklearn.metrics import jaccard_similarity_score as jsc
 
 # Local imports
 from DefaultModel import CNN
 from ShipDataset import ShipDataset
 import utils
 
+GPU_AVAILABLE = torch.cuda.is_available() and torch.cuda.device_count() > 0
+
 # Images are 768x768
 IMAGE_SIZE = 768
-EPOCH = 3
+EPOCH = 20
 BATCH_SIZE = 32
-LEARNING_RATE = 0.001
+LEARNING_RATE = 1
 
 model = CNN()
+if GPU_AVAILABLE:
+    model = model.cuda()
 
 # Define the mask for the train/validate split
 data = pd.read_csv("../data/train_ship_segmentations_v2.csv")
-mask = np.random.rand(len(data)) < 0.05
-mask2 = np.random.rand(len(data)) < 0.99
+mask = np.random.rand(len(data)) < 0.01
+mask2 = np.random.rand(len(data)) < 0.999
 total_count = len(data)
 train_count = (mask == True).sum()
 val_count = total_count - train_count
@@ -35,23 +40,23 @@ train_data = ShipDataset(
     img_dir="../data/train/",
     mask=mask,
     is_train=True,
-    image_size=IMAGE_SIZE)
+    image_size=IMAGE_SIZE,
+    use_cuda=GPU_AVAILABLE)
 val_data = ShipDataset(
     ship_locations_file="../data/train_ship_segmentations_v2.csv",
     img_dir="../data/train/",
     mask=mask2,
     is_train=False,
-    image_size=IMAGE_SIZE)
+    image_size=IMAGE_SIZE,
+    use_cuda=GPU_AVAILABLE)
 
 train_loader = Data.DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=True)
-val_loader = Data.DataLoader(dataset=train_data, batch_size=BATCH_SIZE, shuffle=True)
+val_loader = Data.DataLoader(dataset=val_data, batch_size=BATCH_SIZE, shuffle=True)
 val_iterator = iter(val_loader)
 
 # training and testing
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
-loss_func = nn.BCELoss()
-
-#TODO fix the loss function. Need to use Intersect over Union loss instead
+loss_func = utils.iou
 
 print("Beginning training phase..")
 for epoch in range(EPOCH):
@@ -62,10 +67,19 @@ for epoch in range(EPOCH):
         loss.backward()                                     # backpropagation, compute gradients
         optimizer.step()                                    # apply gradients
 
-        if (i+1) % 5 == 0:                                  # Display progress every 5 batches
-            val_batch = next(val_iterator)
+        if (i+1) % 5 == 0:                                 # Display progress every 25 batches
+            try:
+                val_batch = next(val_iterator)
+            except StopIteration:
+                val_iterator = iter(val_loader)
+                val_batch = next(val_iterator)
             val_output = model(val_batch['image'])
             val_loss = loss_func(val_output, val_batch['pixel_classes'])
+
+            if GPU_AVAILABLE:
+                loss = loss.cpu()
+                val_loss = val_loss.cpu()
+
             print("Epoch: %.4f | train loss: %.4f | validation loss %.4f"
                 % (epoch + float(BATCH_SIZE*(i+1) / train_count), loss.data.numpy(), val_loss.data.numpy()))
 

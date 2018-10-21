@@ -4,13 +4,16 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 from skimage import io, transform
 
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+
 # Local imports
 import utils
 
 class ShipDataset(Dataset):
     """Ship Detection Dataset"""
 
-    def __init__(self, ship_locations_file, img_dir, mask, is_train, image_size, transform=None):
+    def __init__(self, ship_locations_file, img_dir, mask, is_train, image_size, use_cuda=False, transform=None):
         """
         Initializes the Ship Detection Dataset
         Args:
@@ -31,6 +34,7 @@ class ShipDataset(Dataset):
         self.img_dir = img_dir
         self.image_size = image_size
         self.transform = transform
+        self.use_cuda = use_cuda
 
         if is_train:
             self.ship_locations = self.ship_locations[mask]
@@ -68,5 +72,9 @@ class ShipDataset(Dataset):
         image = image.transpose((2, 0, 1))
         image = torch.from_numpy(image)
         image = image.type(torch.FloatTensor)
+
+        if self.use_cuda:
+            image = image.cuda()
+            pixel_classes = pixel_classes.cuda()
 
         return {'image': image, 'pixel_classes': pixel_classes}

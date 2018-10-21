@@ -17,11 +17,11 @@ class CNN(nn.Module):
                 stride=3,                       # stride of convolution
                 padding=2,                      # size of 0-padding
             ),                                  # output shape (15, 256, 256)
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             nn.MaxPool2d(
-                kernel_size=2,
-                stride=2
-            )                                   # output shape (15, 128, 128)
+                kernel_size=4,
+                stride=4
+            )                                   # output shape (15, 64, 64)
         )
 
         self.conv2 = nn.Sequential(
@@ -31,42 +31,36 @@ class CNN(nn.Module):
                 kernel_size=2,
                 stride=2,
                 padding=0
-            ),                                  # output shape (15, 64, 64)
-            nn.ReLU(),
-            nn.MaxPool2d(
-                kernel_size=2,
-                stride=2
-            )                                   # output shape (30, 32, 32)
+            ),                                  # output shape (60, 32, 32)
+            nn.ReLU(inplace=True)
         )
 
         self.conv3 = nn.Sequential(
             nn.Conv2d(
                 in_channels=30,
-                out_channels=60,                 # Shrink from 15 channels down to 5
+                out_channels=8,                # Shrink from 60 channels down to 8
                 kernel_size=2,
                 stride=2,
                 padding=0
-            ),                                  # output shape (60, 16, 16)
-            nn.ReLU(),
+            ),                                  # output shape (8, 16, 16)
+            nn.ReLU(inplace=True),
             nn.MaxPool2d(
-                kernel_size=2,
-                stride=2
-            )                                   # output shape (5, 8, 8)
+                kernel_size=4,
+                stride=4
+            )                                   # output shape (8, 4, 4)
         )
 
         self.out = nn.Sequential(
-            nn.Dropout(p=0.5),
+            nn.Dropout(p=0.5, inplace=True),
             nn.Linear(
-                int(60 * 8 * 8),
+                int(8 * 4 * 4),
                 589824
             ),
             nn.Softmax(1)                       # output shape (1, 589824)
         )
 
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.conv3(x)
+        x = self.conv3(self.conv2(self.conv1(x)))
         x = x.view(x.size(0), -1)               # flatten to (batch_size, 32*image_size/4*image_size/4)
         output = self.out(x)
         return output.view(-1, 768, 768)        # Final output: batch_size, 768, 768
