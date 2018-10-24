@@ -18,7 +18,7 @@ if GPU_AVAILABLE:
     model = model.cuda()
 
 all_runs = []
-for file in files:
+for file in files[1:50]:
     print(file)
 
     # Read in image, convert from numpy image to torch image
