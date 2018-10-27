@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
@@ -38,8 +39,23 @@ class ShipDataset(Dataset):
 
         if is_train:
             self.ship_locations = self.ship_locations[mask]
+            positive_samples = self.ship_locations[self.ship_locations["EncodedPixels"] != ""]
+            negative_samples = self.ship_locations[self.ship_locations["EncodedPixels"] == ""]
+
+            # Downsample the negative samples since there are so many
+            proportion = len(positive_samples) / len(negative_samples)
+            proportion *= 1.2
+            down_sample_mask = mask = np.random.rand(len(negative_samples)) > proportion
+            negative_samples = negative_samples[mask]
+
+            # Combine back into one dataset, shuffle up and deal
+            self.ship_locations = positive_samples.append(negative_samples)
+            self.ship_locations = self.ship_locations.sample(frac=1).reset_index(drop=True)
         else:
             self.ship_locations = self.ship_locations[~mask]
+
+        
+
     def __len__(self):
         """
         Returns the number of samples in the dataset

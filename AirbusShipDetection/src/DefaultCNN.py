@@ -8,7 +8,7 @@ class DefaultCNN(nn.Module):
     The architecture of the Convolutional Neural Network being used
     """
     def __init__(self):
-        super(DefaultCNN, self).__init__()             # input shape (3, 768, 768)
+        super(DefaultCNN, self).__init__()      # input shape (3, 768, 768)
 
         self.conv1 = nn.Sequential(
             nn.Conv2d(

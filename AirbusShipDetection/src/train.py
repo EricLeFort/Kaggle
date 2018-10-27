@@ -2,13 +2,17 @@
 import pandas as pd
 import numpy as np
 import pickle
+import time
 import torch
 import torch.nn as nn
 import torch.utils.data as Data
+import torchvision
+import matplotlib.pyplot as plt
 from sklearn.metrics import jaccard_similarity_score as jsc
 
 # Local imports
 from DefaultCNN import DefaultCNN
+from PureCNN import PureCNN
 from ShipDataset import ShipDataset
 import utils
 
@@ -18,7 +22,7 @@ GPU_AVAILABLE = torch.cuda.is_available() and torch.cuda.device_count() > 0
 IMAGE_SIZE = 768
 EPOCH = 3
 BATCH_SIZE = 64
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.001
 
 model = DefaultCNN()
 if GPU_AVAILABLE:
@@ -67,7 +71,7 @@ for epoch in range(EPOCH):
         loss.backward()                                     # backpropagation, compute gradients
         optimizer.step()                                    # apply gradients
 
-        if (i+1) % 5 == 0:                                  # Display progress every 25 batches
+        if i % 5 == 0:                                  # Display progress every 25 batches
             try:
                 val_batch = next(val_iterator)
             except StopIteration:
@@ -81,6 +85,22 @@ for epoch in range(EPOCH):
                 loss = loss.cpu()
                 val_loss = val_loss.cpu()
 
+            if i % 5 == 0:
+                fig = plt.figure(figsize=(16, 16))
+                orig = val_batch['image'][0].cpu()
+                to_pil = torchvision.transforms.ToPILImage()
+                img = to_pil(orig)
+                fig.add_subplot(1, 2, 1)
+                plt.imshow(img)
+                #plt.title("Original")
+                pred = val_output[0].cpu().detach().numpy()
+                fig.add_subplot(1, 2, 2)
+                plt.imshow(pred, cmap='hot', interpolation='nearest')
+                #plt.title("Prediction Heatmap")
+                plt.show(block=False)
+                plt.pause(1)
+                plt.close()
+
             print("Epoch: %.4f | train loss: %.4f | validation loss %.4f"
                 % (epoch + float(BATCH_SIZE*(i+1) / train_count), loss.data.numpy(), val_loss.data.numpy()))
             val_loss, val_output, val_batch = None, None, None
@@ -92,11 +112,10 @@ print("Done.")
 
 
 """ For if I want to investigate a specific image (by index)
-import matplotlib.pyplot as plt
 import torchvision
 to_pil = torchvision.transforms.ToPILImage()
 img = to_pil(train_data[3]["image"])
-plt.imshow(lum_img)
+plt.imshow(img)
 plt.title("Yoyoyoyoyo")
 plt.show()
 """

@@ -21,13 +21,35 @@ def bounding_box_to_coordinate_runs(x, y, width, height, image_size):
 def iou(outputs: torch.Tensor, labels: torch.Tensor):
     inter = (outputs * labels).sum(2).sum(1)
     union = (outputs + labels).sum(2).sum(1) - inter
+    iou = (inter / (union+1e-20)).mean()
+    
     actual = labels.sum(2).sum(1)
-
-    iou = ((inter+1e-99) / (union+1e-99)).mean()
+    print("inter: {} actual: {} union: {}".format(inter[0], actual[0], union[0]))
 
     return 1 - iou
 
+def iou_and_inv_iou(outputs: torch.Tensor, labels: torch.Tensor):
+    inter = (outputs * labels).sum(2).sum(1)
+    union = (outputs + labels).sum(2).sum(1) - inter
+    iou = (inter / (union+1e-20)).mean()
+
+    inv_outputs = 1 - outputs
+    inv_labels = 1 - labels
+    inv_inter = (inv_outputs * inv_labels).sum(2).sum(1)
+    inv_union = (inv_outputs + inv_labels).sum(2).sum(1) - inv_inter
+    inv_iou = (inv_inter / (inv_union+1e-20)).mean()
+    
+    actual = labels.sum(2).sum(1)
+    print("inter: {} actual: {} union: {}".format(inter[0], actual[0], union[0]))
+
+    return (2 - iou - inv_iou) / 2
+
 def pixel_accuracy_loss(outputs: torch.Tensor, labels: torch.Tensor):
+    inter = (outputs * labels).sum(2).sum(1)
+    union = (outputs + labels).sum(2).sum(1) - inter
+    actual = labels.sum(2).sum(1)
+    print("inter: {} actual: {} union: {}".format(inter[0], actual[0], union[0]))
+
     return 1 - (torch.abs(outputs - labels)).mean()
 
 def iou_score_from_runs(pred_coord_runs, target_coord_runs):
