@@ -31,7 +31,7 @@ class PureCNN(nn.Module):
                 kernel_size=5,
                 stride=1,
                 padding=2
-            )                                   # output shape (18, 768, 768)
+            )                                   # output shape (12, 768, 768)
         )
 
         self.out = nn.Sequential(

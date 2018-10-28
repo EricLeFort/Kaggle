@@ -13,6 +13,7 @@ from sklearn.metrics import jaccard_similarity_score as jsc
 # Local imports
 from DefaultCNN import DefaultCNN
 from PureCNN import PureCNN
+from EncoderDecoder import EncoderDecoder
 from ShipDataset import ShipDataset
 import utils
 
@@ -21,10 +22,10 @@ GPU_AVAILABLE = torch.cuda.is_available() and torch.cuda.device_count() > 0
 # Images are 768x768
 IMAGE_SIZE = 768
 EPOCH = 3
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 LEARNING_RATE = 0.001
 
-model = DefaultCNN()
+model = EncoderDecoder()
 if GPU_AVAILABLE:
     model = model.cuda()
 
@@ -92,11 +93,11 @@ for epoch in range(EPOCH):
                 img = to_pil(orig)
                 fig.add_subplot(1, 2, 1)
                 plt.imshow(img)
-                #plt.title("Original")
+
                 pred = val_output[0].cpu().detach().numpy()
                 fig.add_subplot(1, 2, 2)
-                plt.imshow(pred, cmap='hot', interpolation='nearest')
-                #plt.title("Prediction Heatmap")
+                plt.imshow(pred, cmap='hot')
+
                 plt.show(block=False)
                 plt.pause(1)
                 plt.close()
@@ -109,13 +110,3 @@ for epoch in range(EPOCH):
 print("Training complete! Saving trained model.. ", end="", flush=True)
 pickle.dump(model, open('../models/model.pkl', 'wb'))
 print("Done.")
-
-
-""" For if I want to investigate a specific image (by index)
-import torchvision
-to_pil = torchvision.transforms.ToPILImage()
-img = to_pil(train_data[3]["image"])
-plt.imshow(img)
-plt.title("Yoyoyoyoyo")
-plt.show()
-"""

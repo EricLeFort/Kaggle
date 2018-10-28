@@ -71,6 +71,7 @@ class DefaultCNN(nn.Module):
                 int(6 * 8 * 8),
                 589824
             ),
+            nn.Dropout(0.5, inplace=True),
             nn.Sigmoid()                        # output shape (589824)
         )
 
