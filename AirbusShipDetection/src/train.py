@@ -23,7 +23,7 @@ GPU_AVAILABLE = torch.cuda.is_available() and torch.cuda.device_count() > 0
 IMAGE_SIZE = 768
 EPOCH = 3
 BATCH_SIZE = 32
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0001
 
 model = EncoderDecoder()
 if GPU_AVAILABLE:
@@ -72,7 +72,7 @@ for epoch in range(EPOCH):
         loss.backward()                                     # backpropagation, compute gradients
         optimizer.step()                                    # apply gradients
 
-        if i % 5 == 0:                                  # Display progress every 25 batches
+        if i % 5 == 0:                                      # Display progress every N batches
             try:
                 val_batch = next(val_iterator)
             except StopIteration:
@@ -96,7 +96,7 @@ for epoch in range(EPOCH):
 
                 pred = val_output[0].cpu().detach().numpy()
                 fig.add_subplot(1, 2, 2)
-                plt.imshow(pred, cmap='hot')
+                plt.imshow(pred, cmap='jet', interpolation="none")
 
                 plt.show(block=False)
                 plt.pause(1)

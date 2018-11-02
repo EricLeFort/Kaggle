@@ -101,59 +101,58 @@ class EncoderDecoder(nn.Module):
 
         self.encode1 = build_encode_block(
             in_channels=3,
-            out_channels=6,
+            out_channels=8,
             num_layers=1
         )                                       # output shape (3, 384, 384)
         self.encode2 = build_encode_block(
-            in_channels=6,
-            out_channels=6,
+            in_channels=8,
+            out_channels=8,
             num_layers=2
         )                                       # output shape (8, 192, 192)
         self.encode3 = build_encode_block(
-            in_channels=6,
-            out_channels=12,
+            in_channels=8,
+            out_channels=16,
             num_layers=3
         )                                       # output shape (16, 96, 96)
         self.encode4 = build_encode_block(
-            in_channels=12,
-            out_channels=24,
+            in_channels=16,
+            out_channels=32,
             num_layers=3
         )                                       # output shape (32, 48, 48)
         self.encode5 = build_encode_block(
-            in_channels=24,
-            out_channels=48,
+            in_channels=32,
+            out_channels=64,
             num_layers=3
         )                                       # output shape (64, 24, 24)
 
         self.decode1 = build_decode_block(
-            in_channels=48,
-            out_channels=24,
+            in_channels=64,
+            out_channels=32,
             num_layers=3
         )                                       # output shape (32, 48, 48)
         self.decode2 = build_decode_block(
-            in_channels=24,
-            out_channels=12,
+            in_channels=32,
+            out_channels=16,
             num_layers=3
         )                                       # output shape (16, 96, 96)
         self.decode3 = build_decode_block(
-            in_channels=12,
-            out_channels=6,
+            in_channels=16,
+            out_channels=8,
             num_layers=3
         )                                       # output shape (8, 192, 192)
         self.decode4 = build_decode_block(
-            in_channels=6,
-            out_channels=6,
+            in_channels=8,
+            out_channels=3,
             num_layers=2
         )                                       # output shape (3, 384, 384)
         self.decode5 = build_decode_block(
-            in_channels=6,
+            in_channels=3,
             out_channels=1,
             num_layers=1
         )                                       # output shape (3, 768, 768)
 
         self.out = nn.Sequential(
-            #nn.Dropout(p=0.5, inplace=True),
-            nn.Sigmoid()                        # output shape (768, 768)
+            nn.ReLU()                           # output shape (768, 768)
         )
 
     def forward(self, x):
@@ -170,4 +169,5 @@ class EncoderDecoder(nn.Module):
         decode = self.decode5(decode)
 
         y = self.out(decode)
+        y = y.clamp(0, 1)
         return y.squeeze()                      # Final output: batch_size, 768, 768

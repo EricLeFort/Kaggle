@@ -48,6 +48,9 @@ class ShipDataset(Dataset):
             down_sample_mask = mask = np.random.rand(len(negative_samples)) > proportion
             negative_samples = negative_samples[mask]
 
+            print("{} positive samples".format(len(positive_samples)))
+            print("{} negative samples".format(len(negative_samples)))
+
             # Combine back into one dataset, shuffle up and deal
             self.ship_locations = positive_samples.append(negative_samples)
             self.ship_locations = self.ship_locations.sample(frac=1).reset_index(drop=True)

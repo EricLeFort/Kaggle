@@ -19,11 +19,11 @@ def bounding_box_to_coordinate_runs(x, y, width, height, image_size):
     return runs
 
 def iou(outputs: torch.Tensor, labels: torch.Tensor):
-    inter = (outputs * labels).sum(2).sum(1)
-    union = (outputs + labels).sum(2).sum(1) - inter
+    inter = (outputs * labels).sum(1).sum(1)
+    union = (outputs + labels).sum(1).sum(1) - inter
     iou = (inter / (union+1e-20)).mean()
-    
-    actual = labels.sum(2).sum(1)
+
+    actual = labels.sum(1).sum(1)
     print("inter: {} actual: {} union: {}".format(inter[0], actual[0], union[0]))
 
     return 1 - iou
@@ -42,7 +42,7 @@ def iou_and_inv_iou(outputs: torch.Tensor, labels: torch.Tensor):
     actual = labels.sum(2).sum(1)
     print("inter: {} actual: {} union: {}".format(inter[0], actual[0], union[0]))
 
-    return (2 - iou - inv_iou) / 2
+    return (10 - 9*iou - inv_iou) / 10
 
 def pixel_accuracy_loss(outputs: torch.Tensor, labels: torch.Tensor):
     inter = (outputs * labels).sum(2).sum(1)
